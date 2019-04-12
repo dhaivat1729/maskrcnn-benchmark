@@ -17,18 +17,22 @@
 # for that, check that `which conda`, `which pip` and `which python` points to the
 # right path. From a clean conda env, this is what you need to do
 
-conda create --name maskrcnn_benchmark
+conda create --name maskrcnn_benchmark python=3.6
 conda activate maskrcnn_benchmark
 
 # this installs the right pip and dependencies for the fresh python
 conda install ipython
+conda install requests
+conda install opencv
 
 # maskrcnn_benchmark and coco api dependencies
 pip install ninja yacs cython matplotlib tqdm
 
 # follow PyTorch installation in https://pytorch.org/get-started/locally/
 # we give the instructions for CUDA 9.0
-conda install -c pytorch pytorch-nightly torchvision cudatoolkit=9.0
+pip3 install torch torchvision
+pip install numpy torchvision_nightly
+pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cu90/torch_nightly.html
 
 export INSTALL_DIR=$PWD
 
