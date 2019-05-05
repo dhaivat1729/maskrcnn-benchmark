@@ -14,7 +14,7 @@ from maskrcnn_benchmark.utils import cv2_util
 class COCODemo(object):
     # COCO categories for pretty print
     CATEGORIES = [
-        "__background",
+        "none",
         "person",
         "bicycle",
         "car",
@@ -77,7 +77,7 @@ class COCODemo(object):
         "bed",
         "dining table",
         "toilet",
-        "tv",
+        "television",
         "laptop",
         "mouse",
         "remote",
