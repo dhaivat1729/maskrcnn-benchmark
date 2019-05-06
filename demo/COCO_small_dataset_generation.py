@@ -12,14 +12,14 @@ from shutil import copyfile
 
 
 ## dataset directory
-dataset_directory = '/network/tmp1/bhattdha/coco_dataset/train2017/'
+dataset_directory = '/network/tmp1/bhattdha/coco_dataset/val2017/'
 
 ## This is where new images only for our categories of interest will be stored
-new_dataset_directory = '/network/tmp1/bhattdha/coco_dataset_new/train2017_modified/'
+new_dataset_directory = '/network/tmp1/bhattdha/coco_dataset_new/val2017_modified/'
 
 ## annotations file path(contains json file)
 ## This has only been tested for instances_*.json type files. 
-annotations_path = '/network/tmp1/bhattdha/coco_dataset/annotations/annotations/instances_train2017.json'
+annotations_path = '/network/tmp1/bhattdha/coco_dataset/annotations/annotations/instances_val2017.json'
 
 ## this is where new file for annotations will be stored
 new_annotations_path = '/network/tmp1/bhattdha/coco_dataset_new/annotations_modified/'
@@ -59,7 +59,7 @@ sub_classes = [
 ]
 
 ## TO use API, coco is constructor for COCO class
-coco = COCO('/network/tmp1/bhattdha/coco_dataset/annotations/annotations/instances_train2017.json') 
+coco = COCO(annotations_path) 
 alldata = coco.dataset
 
 '''
@@ -146,7 +146,7 @@ for i in range(len(newdata['annotations'])):
 
 ##### Now we are done with creating all the content for our json file! So let's dump the goddamn thing
 
-with open(new_annotations_path + 'instances_train2017_modified.json', 'w') as outfile:  
+with open(new_annotations_path + 'instances_val2017_modified.json', 'w') as outfile:  
     json.dump(newdata, outfile)
 
 print("json data stored successfully!")
