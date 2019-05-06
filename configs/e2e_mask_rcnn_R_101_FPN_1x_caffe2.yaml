@@ -30,6 +30,6 @@ MODEL:
     SHARE_BOX_FEATURE_EXTRACTOR: False
   MASK_ON: True
 DATASETS:
-  TRAIN: ("coco_2017_train_modified",)
+  TEST: ("coco_2014_minival",)
 DATALOADER:
   SIZE_DIVISIBILITY: 32
