@@ -53,7 +53,7 @@ for file_name in model_list:
 		
 		return top_predictions
 
-	test_dir = '/network/tmp1/bhattdha/validation_data/frames/'
+	test_dir = '/network/tmp1/bhattdha/test_data/test_data/'
 
 	classes = [
 	    'none',
@@ -94,7 +94,7 @@ for file_name in model_list:
 	division_fact = [5,10,15,20]
 
 	for i in range(len(division_fact)):
-		submission_folder_name = 'val_submission_' + file_name[:-5] + '_' + str(division_fact[i])
+		submission_folder_name = 'test_submission_' + file_name[:-5] + '_' + str(division_fact[i])
 		writer = submission_builder.SubmissionWriter(submission_folder_name, classes)
 		for sequence_name in os.listdir(test_dir):
 			if not sequence_name.endswith('.zip'):
