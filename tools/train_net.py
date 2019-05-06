@@ -9,7 +9,7 @@ from maskrcnn_benchmark.utils.env import setup_environment  # noqa F401 isort:sk
 
 import argparse
 import os
-
+import pickle
 import torch
 from maskrcnn_benchmark.config import cfg
 from maskrcnn_benchmark.data import make_data_loader
@@ -24,15 +24,55 @@ from maskrcnn_benchmark.utils.comm import synchronize, get_rank
 from maskrcnn_benchmark.utils.imports import import_file
 from maskrcnn_benchmark.utils.logger import setup_logger
 from maskrcnn_benchmark.utils.miscellaneous import mkdir
+from maskrcnn_benchmark.utils.c2_model_loading import load_c2_format 
 
+def removekey(d, listofkeys):
+    r = dict(d)
+    for key in listofkeys:
+        print('key: {} is removed'.format(key))
+        r.pop(key)
+    return r
 
-def train(cfg, local_rank, distributed):
+def _transfer_pretrained_weights(new_model, old_model, removal_keys):
+    # pretrained_weights = torch.load(pretrained_model_pth)['model']
+    olddict = old_model.state_dict()
+    newdict = removekey(olddict,removal_keys)
+
+    ## newdict doesn't have keys for a last few layers
+    ## Surgery of the model goes here!
+    for key in newdict.keys():
+        new_model.state_dict()[key] = newdict[key]
+
+    return new_model
+
+def train(cfg, cfg_origial, local_rank, distributed):
+    ## The one with modified number of classes
     model = build_detection_model(cfg)
+
+    # cfg_origial = cfg.clone()
+    # cfg_origial.MODEL.ROI_BOX_HEAD.NUM_CLASSES = 81
+    # original_model = build_detection_model(cfg_origial)     ## Original model with 81 classes
+
+    # ## Let's load weights for old class!
+    # save_dir = cfg.OUTPUT_DIR
+    # checkpointer = DetectronCheckpointer(cfg_origial, original_model, save_dir=save_dir)
+    # checkpointer.load(cfg_origial.MODEL.WEIGHT)   
+
+    # # pretrained_model_pth = "/network/home/bhattdha/.torch/models/_detectron_35861795_12_2017_baselines_e2e_mask_rcnn_R-101-FPN_1x.yaml.02_31_37.KqyEK4tT_output_train_coco_2014_train%3Acoco_2014_valminusminival_generalized_rcnn_model_final.pkl"
+    # # These keys are to be removed which forms final layers of the network
+    # removal_keys = ['roi_heads.box.predictor.cls_score.weight', 'roi_heads.box.predictor.cls_score.bias', 'roi_heads.box.predictor.bbox_pred.weight', 'roi_heads.box.predictor.bbox_pred.bias', 'roi_heads.mask.predictor.mask_fcn_logits.weight', 'roi_heads.mask.predictor.mask_fcn_logits.bias'] 
+    
+    # model = _transfer_pretrained_weights(new_model, original_model, removal_keys)
+    
     device = torch.device(cfg.MODEL.DEVICE)
     model.to(device)
-
     optimizer = make_optimizer(cfg, model)
     scheduler = make_lr_scheduler(cfg, optimizer)
+
+    # # Initialize mixed-precision training
+    # use_mixed_precision = cfg.DTYPE == "float16"
+    # amp_opt_level = 'O1' if use_mixed_precision else 'O0'
+    # model, optimizer = amp.initialize(model, optimizer, opt_level=amp_opt_level)
 
     if distributed:
         model = torch.nn.parallel.DistributedDataParallel(
@@ -43,9 +83,7 @@ def train(cfg, local_rank, distributed):
 
     arguments = {}
     arguments["iteration"] = 0
-
     output_dir = cfg.OUTPUT_DIR
-
     save_to_disk = get_rank() == 0
     checkpointer = DetectronCheckpointer(
         cfg, model, optimizer, scheduler, output_dir, save_to_disk
@@ -145,6 +183,8 @@ def main():
 
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
+    cfg.MODEL.ROI_BOX_HEAD.NUM_CLASSES = 31
+    cfg_origial = cfg.clone()
     cfg.freeze()
 
     output_dir = cfg.OUTPUT_DIR
@@ -164,7 +204,7 @@ def main():
         logger.info(config_str)
     logger.info("Running with config:\n{}".format(cfg))
 
-    model = train(cfg, args.local_rank, args.distributed)
+    model = train(cfg, cfg_origial, args.local_rank, args.distributed)
 
     if not args.skip_test:
         run_test(cfg, model, args.distributed)
