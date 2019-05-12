@@ -27,7 +27,7 @@ from maskrcnn_benchmark.utils.miscellaneous import mkdir
 from maskrcnn_benchmark.utils.c2_model_loading import load_c2_format 
 
 def removekey(d, listofkeys):
-    r = dict(d)
+    r = d
     for key in listofkeys:
         print('key: {} is removed'.format(key))
         r.pop(key)
@@ -37,11 +37,11 @@ def _transfer_pretrained_weights(new_model, old_model, removal_keys):
     # pretrained_weights = torch.load(pretrained_model_pth)['model']
     olddict = old_model.state_dict()
     newdict = removekey(olddict,removal_keys)
-
+    torch.save(newdict, 'post_surgery.pth')
     ## newdict doesn't have keys for a last few layers
     ## Surgery of the model goes here!
-    for key in newdict.keys():
-        new_model.state_dict()[key] = newdict[key]
+    # for key in newdict.keys():
+    #     new_model.state_dict()[key] = newdict[key]
 
     return new_model
 
@@ -88,6 +88,8 @@ def train(cfg, cfg_origial, local_rank, distributed):
     checkpointer = DetectronCheckpointer(
         cfg, model, optimizer, scheduler, output_dir, save_to_disk
     )
+
+    # cfg.MODEL.WEIGHT = '/network/home/bhattdha/exp.pth' ## Model stored through surgery
     extra_checkpoint_data = checkpointer.load(cfg.MODEL.WEIGHT)
     arguments.update(extra_checkpoint_data)
 
@@ -184,6 +186,7 @@ def main():
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
     cfg.MODEL.ROI_BOX_HEAD.NUM_CLASSES = 31
+    cfg.SOLVER.BASE_LR = 0.01
     cfg_origial = cfg.clone()
     cfg.freeze()
 

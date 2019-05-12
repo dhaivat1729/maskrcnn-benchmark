@@ -28,10 +28,12 @@ for file_name in model_list:
 	# manual override some options
 	cfg.merge_from_list(["MODEL.DEVICE", "cuda"])
 
+	confidence_threshold = 0.5
+	min_image_size = 600
 	coco_demo = COCODemo(
 		cfg,
-		min_image_size=400,
-		confidence_threshold=0.5,
+		min_image_size=min_image_size,
+		confidence_threshold=confidence_threshold,
 	)
 
 	def load(image_path):
@@ -53,7 +55,8 @@ for file_name in model_list:
 		
 		return top_predictions
 
-	test_dir = '/network/tmp1/bhattdha/test_data/test_data/'
+	# test_dir = '/network/tmp1/bhattdha/test_data/test_data/'
+	test_dir = '/network/tmp1/bhattdha/validation_data/frames/'
 
 	classes = [
 	    'none',
@@ -91,10 +94,12 @@ for file_name in model_list:
 	classes_np = np.array(classes)
 	classes_arg = classes_np.reshape((len(classes), 1)).tolist()
 
-	division_fact = [5,10,15,20]
+	division_fact = [5,2]
+
+	# done_dirs = ['000000', '000001', '000003','000004','000005','000006' '000007', '000009', '000010','000012' '000013', '000014', '000015','000016','000017']
 
 	for i in range(len(division_fact)):
-		submission_folder_name = 'test_submission_' + file_name[:-5] + '_' + str(division_fact[i])
+		submission_folder_name = 'val_submission_' + file_name[:-5] + '_' + str(division_fact[i]) + '_' + str(confidence_threshold) + '_' + str(min_image_size)
 		writer = submission_builder.SubmissionWriter(submission_folder_name, classes)
 		for sequence_name in os.listdir(test_dir):
 			if not sequence_name.endswith('.zip'):
@@ -118,10 +123,15 @@ for file_name in model_list:
 						detection_label = coco_demo.CATEGORIES[detections.get_field('labels')[index].item()]
 
 						## If detection is part of our classes
+						if detection_label == "none":
+							print("None ignored!")		
+							continue
+
 						if detection_label in classes:
-							leftover_prob = 1 - detections.get_field('scores')[index].item()
-							class_probabilities = np.array(class_probabilities) + leftover_prob/(len(classes)-1)
-							class_probabilities[classes.index(detection_label)] = detections.get_field('scores')[index].item()
+							# leftover_prob = 1 - detections.get_field('scores')[index].item()
+							# class_probabilities = np.array(class_probabilities) + leftover_prob/(len(classes)-1)
+							# class_probabilities[classes.index(detection_label)] = detections.get_field('scores')[index].item()
+							class_probabilities[classes.index(detection_label)] = 1.0
 						else:
 							# class_probabilities = np.array(class_probabilities) + 1.0/len(classes)
 							continue
